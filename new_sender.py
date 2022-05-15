@@ -3,6 +3,7 @@
 import logging
 import socket
 import hashlib
+from xml.etree.ElementInclude import DEFAULT_MAX_INCLUSION_DEPTH
 import channelsimulator
 import utils
 import sys
@@ -48,11 +49,12 @@ class Jacob_Sender(Sender):
             l = []
             l.extend(chunk)
             l.extend(struct.pack("I",i))
-            self.dataFrame[i] = [0, hashlib.md5(l).digest()]
+            self.dataFrame[i] = [2, hashlib.md5(l).digest()]
             
         
         while True:
             try:
+                ## ACK RECEIVER
                 ack = self.simulator.u_receive()  # receive ACK
                 self.logger.info("Got ACK from socket: {}".format(
                     ack.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
@@ -67,16 +69,28 @@ class Jacob_Sender(Sender):
                         while(self.ackNumbers[self.ackAt][0]):
                             self.ackAt += 1
                 for i in range(self.ackAt,self.sendAt):
-                    if self.ackNumbers[i][0] == 0:
-                
-                
-                            
-                self.simulator.u_send(data)  # send data
-                
+                    if self.ackNumbers[i][0] == 0:      
+                        self.simulator.u_send(data)  # send data
                 break
             except socket.timeout:
+                self.logger.info("Timeout occurred. Resending data")
                 pass
-
+            
+def _send(self):
+    done = False
+    while not done:
+        for(i, chunk) in enumerate(self.chunks):
+            if(self.dataFrame[i] != 1):
+                l = []
+                l.extend(chunk)
+                l.extend(struct.pack("I",i))
+                self.simulator.u_send(bytearray(chunk))
+                self.dataFrame[i] = 0
+            
+            
+        try: 
+            if 
+    
 
 if __name__ == "__main__":
     # test out BogoSender

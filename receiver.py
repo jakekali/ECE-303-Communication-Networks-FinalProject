@@ -35,7 +35,7 @@ class myReceive(Receiver):
                  #   data.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
                 sys.stdout.write(data)
                 #toSend = checksum.encode()
-                print "Sending ACK"
+                print ("Sending ACK")
                 self.simulator.u_send(bytearray(checksum))  # send ACK
             except socket.timeout:
                 sys.exit()
