@@ -23,19 +23,19 @@ class Receiver(object):
 class myReceive(Receiver):
     ACK_DATA = bytes(123)
 
-    
+    storeArray = [[0]*100]*100;
 
     def receive(self):
         self.logger.info("Receiving on port: {} and replying with ACK on port: {}".format(self.inbound_port, self.outbound_port))
         while True:
             try:
                 data = self.simulator.u_receive()  # receive data
-                checksum = hashlib.md5(bytes(bytearray(data))).digest()[:16]
+                checksum = hashlib.md5(bytes(bytearray(data[0:999]))).digest()[:16]
                 #self.logger.info("Got data from socket: {}".format(
                  #   data.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
                 sys.stdout.write(data)
                 #toSend = checksum.encode()
-                print "Sending ACK"
+                print ("Sending ACK")
                 self.simulator.u_send(bytearray(checksum))  # send ACK
             except socket.timeout:
                 sys.exit()
