@@ -44,15 +44,15 @@ class Jacob_Sender(Sender):
         self.logger.info("Sending on port: {} and waiting for ACK on port: {}".format(self.outbound_port, self.inbound_port))
         
         self.chunks = self.chunk(data)
-        self.dataFrame = [0,"fffffffffffffffffffffffffffffffffff"] * len(self.chunks)
         self.acksLeft = self.chunks.size()
         
         for(i, chunk) in enumerate(self.chunks):
             l = []
             l.extend(chunk)
             l.extend(struct.pack("I",i))
-            self.dataFrame[i] = [2, hashlib.md5(l).digest()]
-            
+            self.dataFrame.append([2, hashlib.md5(l).digest()])
+         
+        print(self.dataFrame.size())
         _send = threading.Thread(target=self._send)
         _send.daemon = True
         _send.start()
