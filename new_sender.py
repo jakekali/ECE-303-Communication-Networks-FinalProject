@@ -34,7 +34,7 @@ class Jacob_Sender(Sender):
     dataFrame = [0,"fffffffffffffffffffffffffffffffffff"]
     acksLeft = 0
     chunks = []
-    
+    data = []
 
     def chunk(data,size=1000):
         for i in range(0, len(data), size):
@@ -42,15 +42,17 @@ class Jacob_Sender(Sender):
     
     def send(self, data):
         self.logger.info("Sending on port: {} and waiting for ACK on port: {}".format(self.outbound_port, self.inbound_port))
-        
+        self.data = data
         self.chunks = self.chunk(data)
-        self.acksLeft = self.chunks.size()
+        
         
         for(i, chunk) in enumerate(self.chunks):
             l = []
             l.extend(chunk)
             l.extend(struct.pack("I",i))
             self.dataFrame.append([2, hashlib.md5(l).digest()])
+        
+        self.acksLeft = self.dataFrame.size()
          
         print(self.dataFrame.size())
         _send = threading.Thread(target=self._send)
@@ -67,6 +69,7 @@ class Jacob_Sender(Sender):
             
     def _send(self):
         while TRUE:
+            self.chunks = self.chunk(self.data)
             for(i, chunk) in enumerate(self.chunks):
                 if(self.dataFrame[i] != 1):
                     l = []

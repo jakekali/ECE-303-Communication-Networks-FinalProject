@@ -54,11 +54,13 @@ class myReceive(Receiver):
                 sys.stdout.write(packet)
                 #toSend = checksum.encode()
                 print ("Sending ACK")
+                self.logger.info("Sent ACK NUM: {} and it has data: {}".format(num, data))
+
                 self.simulator.u_send(bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]))  # send ACK
             except socket.timeout:
                 for x in range(0,dimension-1):
                     finalStore.extend(storeArray[x])
-                    #print(finalStore)
+                    print(finalStore)
                 
                 sys.exit()
 
