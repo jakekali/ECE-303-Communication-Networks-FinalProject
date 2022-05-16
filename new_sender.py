@@ -1,6 +1,7 @@
 # Written by S. Mevawala, modified by D. Gitzel
 
 import logging
+from pickle import TRUE
 import socket
 import hashlib
 from xml.etree.ElementInclude import DEFAULT_MAX_INCLUSION_DEPTH
@@ -8,6 +9,7 @@ import channelsimulator
 import utils
 import sys
 import struct
+import threading
 
 class Sender(object):
 
@@ -30,8 +32,7 @@ class Jacob_Sender(Sender):
     # implement selective repeat
     ackNumbers = [[]]
     dataFrame = [0,"fffffffffffffffffffffffffffffffffff"]
-    ackAt = 0
-    sendAt = 0
+    acksLeft = 0
     chunks = []
     
 
@@ -44,6 +45,7 @@ class Jacob_Sender(Sender):
         
         self.chunks = self.chunk(data)
         self.dataFrame = [0,"fffffffffffffffffffffffffffffffffff"] * len(self.chunks)
+        self.acksLeft = self.chunks.size()
         
         for(i, chunk) in enumerate(self.chunks):
             l = []
@@ -51,45 +53,52 @@ class Jacob_Sender(Sender):
             l.extend(struct.pack("I",i))
             self.dataFrame[i] = [2, hashlib.md5(l).digest()]
             
+        _send = threading.Thread(target=self._send)
+        _send.daemon = True
+        _send.start()
         
-        while True:
-            try:
-                ## ACK RECEIVER
-                ack = self.simulator.u_receive()  # receive ACK
-                self.logger.info("Got ACK from socket: {}".format(
-                    ack.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
-                #get the first 5 characters of the ACK
-                ack_data = ack.splitlines()
-                ack_num = ack_data[0]
-                ack_has = ack_data[1]
-                if(not self.ackNumbers[ack_num][0] and self.ackNumbers[ack_num][1] == ack_has):
-                    self.ackNumbers[ack_num][0] = 1
-                    self.logger.info("ACK received for packet {}".format(ack_num))
-                    if(ack_num == self.ackAt):
-                        while(self.ackNumbers[self.ackAt][0]):
-                            self.ackAt += 1
-                for i in range(self.ackAt,self.sendAt):
-                    if self.ackNumbers[i][0] == 0:      
-                        self.simulator.u_send(data)  # send data
-                break
-            except socket.timeout:
-                self.logger.info("Timeout occurred. Resending data")
-                pass
+        self.recieve()
+        
+        
+        
+        
             
-def _send(self):
-    done = False
-    while not done:
-        for(i, chunk) in enumerate(self.chunks):
-            if(self.dataFrame[i] != 1):
-                l = []
-                l.extend(chunk)
-                l.extend(struct.pack("I",i))
-                self.simulator.u_send(bytearray(chunk))
-                self.dataFrame[i] = 0
+                
             
-            
-        try: 
-            if 
+    def _send(self):
+        while TRUE:
+            for(i, chunk) in enumerate(self.chunks):
+                if(self.dataFrame[i] != 1):
+                    l = []
+                    l.extend(chunk)
+                    l.extend(struct.pack("I",i))
+                    l.extend(self.dataFrame[i][1])
+                    try: 
+                        self.simulator.u_send(bytearray(chunk))
+                        self.dataFrame[i] = 0
+                    except socket.timeout:
+                        pass
+    
+def recieve(self):
+    
+    while True:
+        ## ACK RECEIVER 
+        ack = self.simulator.u_receive()  # receive ACK
+        
+        self.logger.info("Got ACK from socket: {}".format(
+            ack.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
+        #get the ack number
+        ack_num_1 = struct.unpack('I',ack[0:4])
+        ack_num_2 = struct.unpack('I',ack[4:8])
+        ack_num_3 = struct.unpack('I',ack[8:12])
+        if(ack_num_1 == ack_num_2 and ack_num_3 == ack_num_2):
+            acksLeft = acksLeft - 1
+            if acksLeft == 0:
+                sys.exit(0)
+            ack_num = ack_num_1 
+            self.ackNumbers[ack_num][0] = 1
+            self.logger.info("ACK received for packet {}".format(ack_num))
+        
     
 
 if __name__ == "__main__":
