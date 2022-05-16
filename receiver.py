@@ -26,7 +26,7 @@ class myReceive(Receiver):
     
     def receive(self):
         self.logger.info("Receiving on port: {} and replying with ACK on port: {}".format(self.inbound_port, self.outbound_port))
-        dimension = 100
+        dimension = 10
         storeArray = [[0] for i in range(0,dimension)]
         finalStore = [0]
         
@@ -35,6 +35,7 @@ class myReceive(Receiver):
                 packet = self.simulator.u_receive()  # receive data
                 checksum = hashlib.md5(bytes(bytearray(packet[0:1003]))).digest()[:16]
                 data = bytearray(packet[0:999])
+                #print(data)
                 #received number is byte 1000 to 1004
                 num = bytes(bytearray(packet[1000:1003]))
                 #hash is bytes 1005 to 1016
@@ -42,10 +43,10 @@ class myReceive(Receiver):
                 if (checksum == receivedHash):
                     if (num<dimension):
                         storeArray[num] = [1, data]
-                        dimension = dimension + 1
+                        #dimension = dimension + 1
                     else:
                         storeArray.extend([[] for i in ((num-dimension)+1)])
-                        dimension = num
+                        dimension = num + 1
                     
                 #sent checksum is in bytes 1001 to 1017
                 #self.logger.info("Got data from socket: {}".format(
@@ -56,8 +57,8 @@ class myReceive(Receiver):
                 self.simulator.u_send(bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]))  # send ACK
             except socket.timeout:
                 for x in range(0,dimension-1):
-                    finalStore.extend(storeArray[x][0])
-                    print(finalStore)
+                    finalStore.extend(storeArray[x])
+                    #print(finalStore)
                 
                 sys.exit()
 
