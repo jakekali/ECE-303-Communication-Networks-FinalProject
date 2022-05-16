@@ -4,7 +4,7 @@ import logging
 from pickle import TRUE
 import socket
 import hashlib
-from xml.etree.ElementInclude import DEFAULT_MAX_INCLUSION_DEPTH
+#from xml.etree.ElementInclude import DEFAULT_MAX_INCLUSION_DEPTH
 import channelsimulator
 import utils
 import sys
@@ -104,5 +104,5 @@ def recieve(self):
 if __name__ == "__main__":
     # test out BogoSender
     DATA = bytearray(sys.stdin.read())
-    sndr = BogoSender()
+    sndr = Jacob_Sender()
     sndr.send(DATA)

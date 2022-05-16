@@ -27,7 +27,7 @@ class myReceive(Receiver):
     def receive(self):
         self.logger.info("Receiving on port: {} and replying with ACK on port: {}".format(self.inbound_port, self.outbound_port))
         dimension = 100
-        storeArray = [[0] for i in dimension]
+        storeArray = [[0] for i in range(0,dimension)]
         finalStore = [0]
         
         while True:
@@ -55,9 +55,10 @@ class myReceive(Receiver):
                 print ("Sending ACK")
                 self.simulator.u_send(bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]))  # send ACK
             except socket.timeout:
-                for x in dimension:
-                    finalStore[0].append(storeArray[x][1])
-
+                for x in range(0,dimension-1):
+                    finalStore.extend(storeArray[x][0])
+                    print(finalStore)
+                
                 sys.exit()
 
 
@@ -83,3 +84,4 @@ if __name__ == "__main__":
     # test out BogoReceiver
     rcvr = myReceive()
     rcvr.receive()
+    print ()
