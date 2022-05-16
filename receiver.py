@@ -32,10 +32,12 @@ class myReceive(Receiver):
         
         while True:
             try:
+                print("trying to recieve: ")
                 packet = self.simulator.u_receive()  # receive data
+                print("recieved")
                 checksum = hashlib.md5(bytes(bytearray(packet[0:1003]))).digest()[:16]
                 data = bytearray(packet[0:999])
-                #print(data)
+                print(data)
                 #received number is byte 1000 to 1004
                 num = bytes(bytearray(packet[1000:1003]))
                 #hash is bytes 1005 to 1016
@@ -58,6 +60,7 @@ class myReceive(Receiver):
 
                 self.simulator.u_send(bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]))  # send ACK
             except socket.timeout:
+                print ("Timeout")
                 for x in range(0,dimension-1):
                     finalStore.extend(storeArray[x])
                     print(finalStore)

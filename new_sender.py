@@ -26,86 +26,96 @@ class Sender(object):
     def send(self, data):
         raise NotImplementedError("The base API class has no implementation. Please override and add your own.")
 
+class packets: 
+    number = None
+    data = None
+    hash = None
+    sendMe = None
+    recieved = False
+    
+    def __init__(self, number, data):
+        self.number = number
+        self.data = data
+        self.hash = hashlib.md5(bytearray(data)).digest()
+        l = []
+        l.extend(bytearray(data))
+        l.extend(bytearray(struct.pack("I",number)))
+        l.extend(bytearray(self.hash))
+        self.sendMe = bytearray(l)
+        
+    def mail(self):
+        return self.sendMe
+        
+    def markRecieved(self):
+        self.recieved = True
+        return self.recieved
+    
+    def beenRecieved(self):
+        return self.recieved
+    
+    def __str__(self):
+        return "Hello! I'm Packet #{} and I have data ' {} ' and hash '{}' ".format(self.number, self.data, self.hash)
+    def __repr__(self):
+        return "Hello! I'm Packet #{} and I have data {} and hash {} \n I have been received? {}".format(self.number, self.data, self.hash, self.recieved)
+    
 
 class Jacob_Sender(Sender):
 
     # implement selective repeat
     ackNumbers = [[]]
-    dataFrame = [0,"fffffffffffffffffffffffffffffffffff"]
+    dataFrame = []
     acksLeft = 0
     chunks = []
-    data = []
 
-    def chunk(data,size=1000):
+    def chunk(self, data,size=1000):
         for i in range(0, len(data), size):
             yield data[i:i + size]
     
     def send(self, data):
         self.logger.info("Sending on port: {} and waiting for ACK on port: {}".format(self.outbound_port, self.inbound_port))
-        self.data = data
         self.chunks = self.chunk(data)
         
-        
         for(i, chunk) in enumerate(self.chunks):
-            l = []
-            l.extend(chunk)
-            l.extend(struct.pack("I",i))
-            self.dataFrame.append([2, hashlib.md5(l).digest()])
+            pack = packets(i, chunk)
+            self.dataFrame.append(pack)
         
-        self.acksLeft = self.dataFrame.size()
+        self.acksLeft = len(self.dataFrame)
          
-        print(self.dataFrame.size())
         _send = threading.Thread(target=self._send)
         _send.daemon = True
         _send.start()
         
-        self.recieve()
+        recieve(self)
         
-        
-        
-        
-            
-                
-            
     def _send(self):
         while TRUE:
-            self.chunks = self.chunk(self.data)
-            for(i, chunk) in enumerate(self.chunks):
-                if(self.dataFrame[i] != 1):
-                    l = []
-                    l.extend(chunk)
-                    l.extend(struct.pack("I",i))
-                    l.extend(self.dataFrame[i][1])
+            for frame in self.dataFrame:
+                if(not frame.beenRecieved()):
                     try: 
-                        self.simulator.u_send(bytearray(chunk))
-                        self.dataFrame[i] = 0
+                        self.simulator.u_send(frame.mail())
                     except socket.timeout:
                         pass
     
 def recieve(self):
-    
     while True:
         ## ACK RECEIVER 
         ack = self.simulator.u_receive()  # receive ACK
-        
-        self.logger.info("Got ACK from socket: {}".format(
-            ack.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
-        #get the ack number
+        print("I got an ack!")
         ack_num_1 = struct.unpack('I',ack[0:4])
         ack_num_2 = struct.unpack('I',ack[4:8])
-        ack_num_3 = struct.unpack('I',ack[8:12])
-        if(ack_num_1 == ack_num_2 and ack_num_3 == ack_num_2):
+        if(ack_num_1 == ack_num_2):
+            print("ACK NUM: %d", ack_num_1)
             acksLeft = acksLeft - 1
             if acksLeft == 0:
                 sys.exit(0)
             ack_num = ack_num_1 
-            self.ackNumbers[ack_num][0] = 1
+            self.dataFrame[ack_num].markRecieved()
             self.logger.info("ACK received for packet {}".format(ack_num))
         
     
 
 if __name__ == "__main__":
     # test out BogoSender
-    DATA = bytearray(sys.stdin.read())
+    DATA = bytearray("hello bitches this is a test")
     sndr = Jacob_Sender()
     sndr.send(DATA)
