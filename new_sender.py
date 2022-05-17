@@ -137,7 +137,7 @@ def recieve(self):
         if(ack_pack.isCorr()):
             #print("ACK NUM: %d", ack_pack.number)
             self.acksLeft = self.acksLeft - 1
-            print(self.acksLeft)
+            #print(self.acksLeft)
             if self.acksLeft == 0:
                 sys.exit(0)
             ack_num = ack_pack.number
