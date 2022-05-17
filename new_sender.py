@@ -48,9 +48,9 @@ class packets:
             l.extend(struct.pack("=I",(q)))
             l.extend((struct.pack("=I",self.number)))
             self.hash = hashlib.md5(bytearray(l)).digest()
-            print(len(l))
+            #print(len(l))
             l.extend(bytearray(self.hash))
-            print(len(l))
+            #print(len(l))
             self.sendMe = bytearray(l)
             
         
@@ -130,13 +130,14 @@ class Jacob_Sender(Sender):
 def recieve(self):
     while True:
         ## ACK RECEIVER 
-        print("waiting for an acknowledgement")
+        #print("waiting for an acknowledgement")
         ack = self.simulator.u_receive()  # receive ACK
-        print("I got an ack!")
+        #print("I got an ack!")
         ack_pack = packets(ack)
         if(ack_pack.isCorr()):
-            print("ACK NUM: %d", ack_pack.number)
+            #print("ACK NUM: %d", ack_pack.number)
             self.acksLeft = self.acksLeft - 1
+            print(self.acksLeft)
             if self.acksLeft == 0:
                 sys.exit(0)
             ack_num = ack_pack.number
@@ -147,6 +148,6 @@ def recieve(self):
 
 if __name__ == "__main__":
     # test out BogoSender
-    DATA = bytearray("hello bitches this is a test")
+    DATA = bytearray(sys.stdin.read())    
     sndr = Jacob_Sender()
     sndr.send(DATA)

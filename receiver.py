@@ -106,9 +106,9 @@ class myReceive(Receiver):
         
         while True:
             try:
-                print("trying to recieve: ")
+                #print("trying to recieve: ")
                 packet_in = self.simulator.u_receive()  # receive data
-                print("recieved")
+                #print("recieved")
                 incoming_packet = packets(packet_in)
                 if (incoming_packet.isCorr()):
                     num = incoming_packet.number
@@ -120,14 +120,14 @@ class myReceive(Receiver):
                         storeArray.extend([[] for i in ((num-dimension)+1)])
                         dimension = num + 1
                     
-                    print("=PACKET #{} RECIEVED".format(num))
+                    #print("=PACKET #{} RECIEVED".format(num))
                     ack_pack = packets(num,struct.pack("I",num))
                     self.logger.info("Sent ACK NUM: {} and it has data: {}".format(num, data))
 
                     self.simulator.u_send(ack_pack.mail())
-                    print(ack_pack)
+                    #print(ack_pack)
             except socket.timeout:
-                print ("Timeout")
+                #print ("Timeout")
                 store = ""
                 for x in range(0,dimension-1):
                     if (storeArray[x][0] ==1):
@@ -136,6 +136,8 @@ class myReceive(Receiver):
                         
                         store = store + toAdd
                         print(store)
+                        sys.stdout.write(store)
+
                         #print (storeArray)
                 
                 sys.exit()
