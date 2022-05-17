@@ -32,17 +32,46 @@ class packets:
     hash = None
     sendMe = None
     recieved = False
+    isCorrect = False
+    numPad = None
     
-    def __init__(self, number, data):
-        self.number = number
-        self.data = data
-        self.hash = hashlib.md5(bytearray(data)).digest()
-        l = []
-        l.extend(bytearray(data))
-        l.extend(bytearray(struct.pack("I",number)))
-        l.extend(bytearray(self.hash))
-        self.sendMe = bytearray(l)
+    def __init__(self, *args):
         
+        if(len(args) == 2):
+            
+            self.number = args[0]
+            self.data = args[1]
+            l = []
+            l.extend(bytearray(self.data))
+            q = len(l)
+            l.extend([0]*(1000-len(l)))
+            l.extend(struct.pack("=I",(q)))
+            l.extend((struct.pack("=I",self.number)))
+            self.hash = hashlib.md5(bytearray(l)).digest()
+            print(len(l))
+            l.extend(bytearray(self.hash))
+            print(len(l))
+            self.sendMe = bytearray(l)
+            
+        
+        elif(len(args) == 1):
+            packetIn = args[0]
+            self.hash = hashlib.md5(bytes(bytearray(packetIn[0:1008]))).digest() 
+            self.numPad = struct.unpack('=I', packetIn[1000:1004])[0]
+            self.data = bytearray(packetIn[0:self.numPad]) 
+            self.number = struct.unpack('=I', packetIn[1004:1008])[0] 
+            #Check to see if the hash is correct
+            if bytearray(self.hash) == packetIn[1008:1024]: 
+                self.isCorrect = True 
+            
+            #if this failes then you have a problem with the code above.
+            #test_packet = packets(self.number, self.data)
+            #if(test_packet.mail() != packetIn):
+            #    print("Error: Packet not read correctly, or corrupted packet")
+        
+    def isCorr(self):
+        return self.isCorrect
+             
     def mail(self):
         return self.sendMe
         
@@ -58,7 +87,9 @@ class packets:
     def __repr__(self):
         return "Hello! I'm Packet #{} and I have data {} and hash {} \n I have been received? {}".format(self.number, self.data, self.hash, self.recieved)
     
-
+    def dataOut(self):
+        return self.data
+        
 class Jacob_Sender(Sender):
 
     # implement selective repeat
@@ -99,16 +130,16 @@ class Jacob_Sender(Sender):
 def recieve(self):
     while True:
         ## ACK RECEIVER 
+        print("waiting for an acknowledgement")
         ack = self.simulator.u_receive()  # receive ACK
         print("I got an ack!")
-        ack_num_1 = struct.unpack('I',ack[0:4])
-        ack_num_2 = struct.unpack('I',ack[4:8])
-        if(ack_num_1 == ack_num_2):
-            print("ACK NUM: %d", ack_num_1)
-            acksLeft = acksLeft - 1
-            if acksLeft == 0:
+        ack_pack = packets(ack)
+        if(ack_pack.isCorr()):
+            print("ACK NUM: %d", ack_pack.number)
+            self.acksLeft = self.acksLeft - 1
+            if self.acksLeft == 0:
                 sys.exit(0)
-            ack_num = ack_num_1 
+            ack_num = ack_pack.number
             self.dataFrame[ack_num].markRecieved()
             self.logger.info("ACK received for packet {}".format(ack_num))
         

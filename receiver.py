@@ -4,6 +4,7 @@ import channelsimulator
 import utils
 import sys
 import socket
+import struct
 
 class Receiver(object):
 
@@ -20,6 +21,72 @@ class Receiver(object):
     def receive(self):
         raise NotImplementedError("The base API class has no implementation. Please override and add your own.")
 
+class packets: 
+    number = None
+    data = None
+    hash = None
+    sendMe = None
+    recieved = False
+    isCorrect = False
+    numPad = None
+    
+    def __init__(self, *args):
+        
+        if(len(args) == 2):
+            
+            self.number = args[0]
+            self.data = args[1]
+            l = []
+            l.extend(bytearray(self.data))
+            q = len(l)
+            l.extend([0]*(1000-len(l)))
+            l.extend(struct.pack("=I",(q)))
+            l.extend((struct.pack("=I",self.number)))
+            self.hash = hashlib.md5(bytearray(l)).digest()
+            print(len(l))
+            l.extend(bytearray(self.hash))
+            print(len(l))
+            self.sendMe = bytearray(l)
+            
+        
+        elif(len(args) == 1):
+            packetIn = args[0]
+            self.hash = hashlib.md5(bytes(bytearray(packetIn[0:1008]))).digest() 
+            self.numPad = struct.unpack('=I', packetIn[1000:1004])[0]
+            self.data = bytearray(packetIn[0:self.numPad]) 
+            self.number = struct.unpack('=I', packetIn[1004:1008])[0] 
+            #Check to see if the hash is correct
+            if bytearray(self.hash) == packetIn[1008:1024]: 
+                self.isCorrect = True 
+            
+            #if this failes then you have a problem with the code above.
+            #test_packet = packets(self.number, self.data)
+            #if(test_packet.mail() != packetIn):
+            #    print("Error: Packet not read correctly, or corrupted packet")
+        
+    def isCorr(self):
+        return self.isCorrect
+             
+    def mail(self):
+        return self.sendMe
+        
+    def markRecieved(self):
+        self.recieved = True
+        return self.recieved
+    
+    def beenRecieved(self):
+        return self.recieved
+    
+    def __str__(self):
+        return "Hello! I'm Packet #{} and I have data ' {} ' and hash '{}' ".format(self.number, self.data, self.hash)
+    def __repr__(self):
+        return "Hello! I'm Packet #{} and I have data {} and hash {} \n I have been received? {}".format(self.number, self.data, self.hash, self.recieved)
+    
+    def dataOut(self):
+        return self.data
+        
+
+
 class myReceive(Receiver):
     ACK_DATA = bytes(123)
 
@@ -30,19 +97,22 @@ class myReceive(Receiver):
         storeArray = [[0] for i in range(0,dimension)]
         finalStore = [0]
         
+        #Tests the packet class
+        # test_packet = packets(754,struct.pack("I",777))
+        # sendMe = test_packet.mail()
+        # test_packet2 = packets(sendMe)
+        # print(struct.unpack("I",test_packet2.dataOut())[0])
+        
+        
         while True:
             try:
                 print("trying to recieve: ")
-                packet = self.simulator.u_receive()  # receive data
+                packet_in = self.simulator.u_receive()  # receive data
                 print("recieved")
-                checksum = hashlib.md5(bytes(bytearray(packet[0:1003]))).digest()[:16]
-                data = bytearray(packet[0:999])
-                print(data)
-                #received number is byte 1000 to 1004
-                num = bytes(bytearray(packet[1000:1003]))
-                #hash is bytes 1005 to 1016
-                receivedHash = bytes(bytearray(packet[1004:1020]))
-                if (checksum == receivedHash):
+                incoming_packet = packets(packet_in)
+                if (incoming_packet.isCorr()):
+                    num = incoming_packet.number
+                    data = incoming_packet.dataOut()
                     if (num<dimension):
                         storeArray[num] = [1, data]
                         #dimension = dimension + 1
@@ -50,15 +120,12 @@ class myReceive(Receiver):
                         storeArray.extend([[] for i in ((num-dimension)+1)])
                         dimension = num + 1
                     
-                #sent checksum is in bytes 1001 to 1017
-                #self.logger.info("Got data from socket: {}".format(
-                 #   data.decode('ascii')))  # note that ASCII will only decode bytes in the range 0-127
-                sys.stdout.write(packet)
-                #toSend = checksum.encode()
-                print ("Sending ACK")
-                self.logger.info("Sent ACK NUM: {} and it has data: {}".format(num, data))
+                    print("=PACKET #{} RECIEVED".format(num))
+                    ack_pack = packets(num,struct.pack("I",num))
+                    self.logger.info("Sent ACK NUM: {} and it has data: {}".format(num, data))
 
-                self.simulator.u_send(bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]) + bytearray(packet[1000:1003]))  # send ACK
+                    self.simulator.u_send(ack_pack.mail())
+                    print(ack_pack)
             except socket.timeout:
                 print ("Timeout")
                 for x in range(0,dimension-1):
