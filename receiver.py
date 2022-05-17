@@ -128,9 +128,15 @@ class myReceive(Receiver):
                     print(ack_pack)
             except socket.timeout:
                 print ("Timeout")
+                store = ""
                 for x in range(0,dimension-1):
-                    finalStore.extend(storeArray[x])
-                    print(finalStore)
+                    if (storeArray[x][0] ==1):
+
+                        toAdd = storeArray[x][1]
+                        
+                        store = store + toAdd
+                        print(store)
+                        #print (storeArray)
                 
                 sys.exit()
 
