@@ -43,9 +43,9 @@ class packets:
             l.extend(struct.pack("=I",(q)))
             l.extend((struct.pack("=I",self.number)))
             self.hash = hashlib.md5(bytearray(l)).digest()
-            print(len(l))
+            #print(len(l))
             l.extend(bytearray(self.hash))
-            print(len(l))
+            #print(len(l))
             self.sendMe = bytearray(l)
             
         
@@ -93,7 +93,7 @@ class myReceive(Receiver):
     
     def receive(self):
         self.logger.info("Receiving on port: {} and replying with ACK on port: {}".format(self.inbound_port, self.outbound_port))
-        dimension = 10
+        dimension = 2000000
         storeArray = [[0] for i in range(0,dimension)]
         finalStore = [0]
         
@@ -135,12 +135,11 @@ class myReceive(Receiver):
                         toAdd = storeArray[x][1]
                         
                         store = store + toAdd
-                        print(store)
-                        sys.stdout.write(store)
+                        
 
                         #print (storeArray)
-                
-                sys.exit()
+                sys.stdout.write(store)
+                sys.exit(0)
 
 
 class BogoReceiver(Receiver):
